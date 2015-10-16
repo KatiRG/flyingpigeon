@@ -10,17 +10,52 @@ def modelUncertaintyWorker(resource):
   from cdo import Cdo
   cdo = Cdo()
   from flyingpigeon.utils import check_timestepps
-  
-  # check resource of consintency 
-  resource_qc =  check_timestepps(resource)
-  # for nc in resource
+
+  # check resource for consistency
+  resource_qc =  check_timestepps(resource)  
   
   try: 
     # ensemble mean 
-    nc_ensmean = cdo.ensmean(input = resource_qc , output = 'nc_ensmean.nc')
-    logger.info('ensemble calculation done')
+    nc_ensmean = cdo.ensmean(input = resource_qc, output = 'nc_ensmean.nc')    
+    logger.info('ensmean calculations done')
   except Exception as e: 
-    logger.error('ensemble mean failed: %s ' % e )
+    logger.error('ensmean calculations failed: %s ' % e )
+
+  try: 
+    # find number of time steps    
+    numsteps = cdo.ntime(input = nc_ensmean) #number of timesteps   
+    logger.info('ntime steps calculation done')
+  except Exception as e: 
+    logger.error('ntime steps calculations failed: %s ' % e )
+
+  try:     
+    #nc_delta = nc_ensmean(lastpt) - nc_ensmean(firstpt)
+    #nc_laststep = cdo.seltimestep('numsteps', input = nc_ensmean, output = 'nc_laststep.nc')
+    nc_laststep = cdo.seltimestep(numsteps[0], input = nc_ensmean, output = 'nc_laststep.nc')
+    nc_firststep = cdo.seltimestep(1, input = nc_ensmean, output = 'nc_firststep.nc')
+    nc_delta = cdo.sub(input = [nc_laststep, nc_firststep], output = 'nc_delta.nc')
+    logger.info('delta calculation done')
+  except Exception as e: 
+    logger.error('delta calculation failed: %s ' % e )  
+
+  try: 
+    # ensemble std    
+    nc_ensstd = cdo.ensstd(input = resource_qc, output = 'nc_ensstd.nc')
+    logger.info('std calculation done')
+  except Exception as e: 
+    logger.error('std calculation failed: %s ' % e )
+
+  try:
+    # compute positive mask: if nc_delta > nc_enssstd
+    nc_binmask = cdo.gt(input = [nc_delta, nc_ensstd], output = 'nc_binmask.nc')
+    logger.info('calculated mask')
+  except Exception as e: 
+    logger.error('mask calculation failed: %s ' % e )
+
+  
+  #if > const
+  #cdo.gtc('arg', input=infile, ontput=outfile)
+
   # mean + sigma as a mask 
   # sigma1 = cdo.fldstd(input = nc_ensmean, output = 'nc_sigma1.nc')
   # mask 
@@ -28,6 +63,10 @@ def modelUncertaintyWorker(resource):
   # mean + 2* sigma as a mask
   
   # merge to on result netCDF
+  # cdo.merge(input=[file1, file2], output='result.nc')
+
+  result = nc_delta    #ensmean[lastpt] - ensmean[0] 
+  result2 = nc_ensstd  #std of ensmean
+  result3 = nc_binmask #delta > std
   
-  result = nc_ensmean
-  return result
+  return result, result2, result3

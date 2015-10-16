@@ -26,13 +26,29 @@ class modelUncertainty(WPSProcess):
 
         # output 
         
-        self.output = self.addComplexOutput(
-            identifier="output",
-            title="ensemble mean and uncertainty",
-            abstract="netCDF file containing calculated mean and uncertinty mask",
+        self.delta = self.addComplexOutput(
+            identifier="delta",
+            title="ensemble mean lastpt minus firstpt",
+            abstract="netCDF file containing delta",
             formats=[{"mimeType":"application/netcdf"}],
             asReference=True,
-            )         
+            )   
+
+        self.stdensstd = self.addComplexOutput(
+            identifier="stdensstd",
+            title="std of ensemble mean across time",
+            abstract="netCDF file containing std of mean across time",
+            formats=[{"mimeType":"application/netcdf"}],
+            asReference=True,
+            ) 
+
+        self.binmask = self.addComplexOutput(
+            identifier="binmask",
+            title="binmask",
+            abstract="netCDF file where delta greater than ensstd",
+            formats=[{"mimeType":"application/netcdf"}],
+            asReference=True,
+            )
 
     def execute(self):
         self.show_status('starting uncertainty process', 0)
@@ -41,8 +57,12 @@ class modelUncertainty(WPSProcess):
         
         ncfiles = self.getInputValues(identifier='resource')
         
-        result = muw(ncfiles)
+        result, result2, result3  = muw(ncfiles)        
         
-        self.output.setValue( result )
+        self.delta.setValue( result ) #ensmean[lastpt] - ensmean[0] 
+
+        self.stdensstd.setValue( result2 ) #std of ensmean
+
+        self.binmask.setValue( result3 ) #delta > std
             
-        self.show_status('uncertainty process done', 99)       
+        self.show_status('uncertainty process done', 99)
