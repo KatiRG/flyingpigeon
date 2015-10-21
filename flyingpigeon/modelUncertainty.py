@@ -1,7 +1,6 @@
 from malleefowl import wpslogging as logging
 logger = logging.getLogger(__name__)
 
-
 def modelUncertaintyWorker(resource):
   """retuns the result
   
@@ -32,6 +31,7 @@ def modelUncertaintyWorker(resource):
     #nc_delta = nc_ensmean(lastpt) - nc_ensmean(firstpt)
     #nc_laststep = cdo.seltimestep('numsteps', input = nc_ensmean, output = 'nc_laststep.nc')
     nc_laststep = cdo.seltimestep(numsteps[0], input = nc_ensmean, output = 'nc_laststep.nc')
+    #nc_laststep = cdo.seltimestep('-1', input = nc_ensmean, output = 'nc_laststep.nc')
     nc_firststep = cdo.seltimestep(1, input = nc_ensmean, output = 'nc_firststep.nc')
     nc_delta = cdo.sub(input = [nc_laststep, nc_firststep], output = 'nc_delta.nc')
     logger.info('delta calculation done')
@@ -47,7 +47,8 @@ def modelUncertaintyWorker(resource):
 
   try:
     # compute positive mask: if nc_delta > nc_enssstd
-    nc_binmask = cdo.gt(input = [nc_delta, nc_ensstd], output = 'nc_binmask.nc')
+    nc_level = cdo.mulc(1, input = nc_ensstd, output = 'nc_level.nc')
+    nc_binmask = cdo.gt(input = [nc_delta, nc_level], output = 'nc_binmask.nc')
     logger.info('calculated mask')
   except Exception as e: 
     logger.error('mask calculation failed: %s ' % e )
@@ -65,7 +66,7 @@ def modelUncertaintyWorker(resource):
   # merge to on result netCDF
   # cdo.merge(input=[file1, file2], output='result.nc')
 
-  result = nc_delta    #ensmean[lastpt] - ensmean[0] 
+  result = nc_laststep  #nc_delta    #ensmean[lastpt] - ensmean[0] 
   result2 = nc_ensstd  #std of ensmean
   result3 = nc_binmask #delta > std
   
