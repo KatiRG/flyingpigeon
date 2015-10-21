@@ -20,18 +20,9 @@ def modelUncertaintyWorker(resource):
   except Exception as e: 
     logger.error('ensmean calculations failed: %s ' % e )
 
-  try: 
-    # find number of time steps    
-    numsteps = cdo.ntime(input = nc_ensmean) #number of timesteps   
-    logger.info('ntime steps calculation done')
-  except Exception as e: 
-    logger.error('ntime steps calculations failed: %s ' % e )
-
   try:     
-    #nc_delta = nc_ensmean(lastpt) - nc_ensmean(firstpt)
-    #nc_laststep = cdo.seltimestep('numsteps', input = nc_ensmean, output = 'nc_laststep.nc')
-    nc_laststep = cdo.seltimestep(numsteps[0], input = nc_ensmean, output = 'nc_laststep.nc')
-    #nc_laststep = cdo.seltimestep('-1', input = nc_ensmean, output = 'nc_laststep.nc')
+    #nc_delta = nc_ensmean(lastpt) - nc_ensmean(firstpt)    
+    nc_laststep = cdo.seltimestep('-1', input = nc_ensmean, output = 'nc_laststep.nc')
     nc_firststep = cdo.seltimestep(1, input = nc_ensmean, output = 'nc_firststep.nc')
     nc_delta = cdo.sub(input = [nc_laststep, nc_firststep], output = 'nc_delta.nc')
     logger.info('delta calculation done')
