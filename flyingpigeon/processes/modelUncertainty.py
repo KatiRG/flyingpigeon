@@ -8,7 +8,7 @@ class modelUncertainty(WPSProcess):
         # definition of this process
         WPSProcess.__init__(self, 
             identifier = "modelUncertainty",
-            title="Robustness of modelled signal changes",
+            title="Robustness of modelled signal change",
             version = "0.1",
             metadata= [ {"title": "LSCE" , "href": "http://www.lsce.ipsl.fr/"} ],
             abstract="Calculates whether the magnitude of the ensemble mean is larger than the ensemble standard deviation.",
@@ -24,28 +24,36 @@ class modelUncertainty(WPSProcess):
             formats=[{"mimeType":"application/x-netcdf"}],
             )
 
-        # output 
-        
-        self.delta = self.addComplexOutput(
-            identifier="abs delta",
-            title="magnitude of ensemble change",
-            abstract="netCDF file containing abs delta",
+        # output
+
+        self.ensmean = self.addComplexOutput(
+            identifier="ensmean",
+            title="ensemble mean",
+            abstract="netCDF file containing ensemble mean",
             formats=[{"mimeType":"application/netcdf"}],
             asReference=True,
-            )   
+            )
 
         self.ensstd = self.addComplexOutput(
             identifier="ensstd",
-            title="std of ensemble mean across time",
-            abstract="netCDF file containing std of mean across time",
+            title="ensemble std",
+            abstract="netCDF file containing ensemble std",
             formats=[{"mimeType":"application/netcdf"}],
             asReference=True,
-            ) 
+            )
+        
+        self.absdelta = self.addComplexOutput(
+            identifier="abs delta",
+            title="magnitude of mean model change",
+            abstract="netCDF file containing magnitude of mean model change",
+            formats=[{"mimeType":"application/netcdf"}],
+            asReference=True,
+            )         
 
         self.binmask = self.addComplexOutput(
             identifier="binmask",
-            title="binmask",
-            abstract="netCDF file where abs delta greater than ensstd",
+            title="binary mask",
+            abstract="netCDF mask file where mean model change magnitude greater than ensemble std",
             formats=[{"mimeType":"application/netcdf"}],
             asReference=True,
             )
@@ -57,12 +65,14 @@ class modelUncertainty(WPSProcess):
         
         ncfiles = self.getInputValues(identifier='resource')
         
-        result, result2, result3  = muw(ncfiles)        
+        result, result2, result3, result4  = muw(ncfiles)        
         
-        self.delta.setValue( result ) #magnitude of model change
+        self.ensmean.setValue( result ) #ensemble mean
 
         self.ensstd.setValue( result2 ) #ensemble std
 
-        self.binmask.setValue( result3 ) #delta > std
+        self.absdelta.setValue( result3 ) #magnitude of model change    
+
+        self.binmask.setValue( result4 ) #absdelta > std
             
         self.show_status('uncertainty process done', 99)

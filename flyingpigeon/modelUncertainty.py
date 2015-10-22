@@ -58,8 +58,9 @@ def modelUncertaintyWorker(resource):
   # merge to on result netCDF
   # cdo.merge(input=[file1, file2], output='result.nc')
 
-  result = nc_absdelta    #magnitude of model change
-  result2 = nc_ensstd  #ensemble std
-  result3 = nc_binmask #delta > std
+  result = nc_ensmean    #ensemble mean
+  result2 = nc_ensstd    #ensemble std
+  result3 = nc_absdelta  #magnitude of model change  
+  result4 = nc_binmask   #absdelta > std
   
-  return result, result2, result3
+  return result, result2, result3, result4
