@@ -14,7 +14,7 @@ def modelUncertaintyWorker(resource):
   resource_qc =  check_timestepps(resource)  
   
   try: 
-    # ensemble mean 
+    # ensemble mean and magnitude
     nc_ensmean = cdo.ensmean(input = resource_qc, output = 'nc_ensmean.nc')    
     logger.info('ensmean calculations done')
   except Exception as e: 
@@ -25,6 +25,7 @@ def modelUncertaintyWorker(resource):
     nc_laststep = cdo.seltimestep('-1', input = nc_ensmean, output = 'nc_laststep.nc')
     nc_firststep = cdo.seltimestep(1, input = nc_ensmean, output = 'nc_firststep.nc')
     nc_delta = cdo.sub(input = [nc_laststep, nc_firststep], output = 'nc_delta.nc')
+    nc_absdelta = cdo.abs(input = nc_delta, output = 'nc_absdelta.nc')
     logger.info('delta calculation done')
   except Exception as e: 
     logger.error('delta calculation failed: %s ' % e )  
@@ -37,9 +38,9 @@ def modelUncertaintyWorker(resource):
     logger.error('std calculation failed: %s ' % e )
 
   try:
-    # compute positive mask: if nc_delta > nc_enssstd
+    # compute mask: if nc_absdelta > nc_enssstd
     nc_level = cdo.mulc(1, input = nc_ensstd, output = 'nc_level.nc')
-    nc_binmask = cdo.gt(input = [nc_delta, nc_level], output = 'nc_binmask.nc')
+    nc_binmask = cdo.gt(input = [nc_absdelta, nc_level], output = 'nc_binmask.nc')
     logger.info('calculated mask')
   except Exception as e: 
     logger.error('mask calculation failed: %s ' % e )
@@ -57,8 +58,8 @@ def modelUncertaintyWorker(resource):
   # merge to on result netCDF
   # cdo.merge(input=[file1, file2], output='result.nc')
 
-  result = nc_laststep  #nc_delta    #ensmean[lastpt] - ensmean[0] 
-  result2 = nc_ensstd  #std of ensmean
+  result = nc_absdelta    #magnitude of model change
+  result2 = nc_ensstd  #ensemble std
   result3 = nc_binmask #delta > std
   
   return result, result2, result3

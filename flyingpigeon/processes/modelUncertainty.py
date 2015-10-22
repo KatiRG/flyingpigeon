@@ -8,10 +8,10 @@ class modelUncertainty(WPSProcess):
         # definition of this process
         WPSProcess.__init__(self, 
             identifier = "modelUncertainty",
-            title="Calculation of model uncertainty",
+            title="Robustness of modelled signal changes",
             version = "0.1",
             metadata= [ {"title": "LSCE" , "href": "http://www.lsce.ipsl.fr/"} ],
-            abstract="Calculates the ensemble mean and uncertainty mask",
+            abstract="Calculates whether the magnitude of the ensemble mean is larger than the ensemble standard deviation.",
             )
         # input arguments    
         self.resource = self.addComplexInput(
@@ -27,15 +27,15 @@ class modelUncertainty(WPSProcess):
         # output 
         
         self.delta = self.addComplexOutput(
-            identifier="delta",
-            title="ensemble mean lastpt minus firstpt",
-            abstract="netCDF file containing delta",
+            identifier="abs delta",
+            title="magnitude of ensemble change",
+            abstract="netCDF file containing abs delta",
             formats=[{"mimeType":"application/netcdf"}],
             asReference=True,
             )   
 
-        self.stdensstd = self.addComplexOutput(
-            identifier="stdensstd",
+        self.ensstd = self.addComplexOutput(
+            identifier="ensstd",
             title="std of ensemble mean across time",
             abstract="netCDF file containing std of mean across time",
             formats=[{"mimeType":"application/netcdf"}],
@@ -45,7 +45,7 @@ class modelUncertainty(WPSProcess):
         self.binmask = self.addComplexOutput(
             identifier="binmask",
             title="binmask",
-            abstract="netCDF file where delta greater than ensstd",
+            abstract="netCDF file where abs delta greater than ensstd",
             formats=[{"mimeType":"application/netcdf"}],
             asReference=True,
             )
@@ -59,9 +59,9 @@ class modelUncertainty(WPSProcess):
         
         result, result2, result3  = muw(ncfiles)        
         
-        self.delta.setValue( result ) #ensmean[lastpt] - ensmean[0] 
+        self.delta.setValue( result ) #magnitude of model change
 
-        self.stdensstd.setValue( result2 ) #std of ensmean
+        self.ensstd.setValue( result2 ) #ensemble std
 
         self.binmask.setValue( result3 ) #delta > std
             
