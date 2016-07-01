@@ -71,8 +71,7 @@
         //====================================================================
         function init() {
 
-            d3.tsv("analogues_placeholder.json", function(data) {
-                console.log("data")
+            d3.tsv("analogues_placeholder.json", function(data) {                
 
                 minDate = dateFormat.parse(data[0].dateRef); //first date in file
                 maxDate = dateFormat.parse(data[Object.keys(data).length - 1].dateRef); //last date in file
